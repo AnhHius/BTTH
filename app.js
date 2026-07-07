@@ -2,7 +2,41 @@
 // API CONFIGURATION
 // ============================================
 
-const API_BASE_URL = 'http://localhost:3000'; // Change to your backend URL
+const API_BASE_URLS = [
+    'http://127.0.0.1:3000',
+    'http://localhost:3000',
+].filter((value, index, array) => array.indexOf(value) === index);
+
+async function requestJson(endpoint, options = {}, retries = 2) {
+    let lastError = null;
+
+    for (const baseUrl of API_BASE_URLS) {
+        try {
+            const response = await fetch(`${baseUrl}${endpoint}`, {
+                mode: 'cors',
+                cache: 'no-store',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                ...options,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            lastError = error;
+            if (retries > 0) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+    }
+
+    throw lastError || new Error('Failed to fetch');
+}
 
 // ============================================
 // FETCH UTILITY FUNCTIONS
@@ -10,40 +44,21 @@ const API_BASE_URL = 'http://localhost:3000'; // Change to your backend URL
 
 async function fetchData(endpoint) {
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return await response.json();
+        return await requestJson(endpoint, { method: 'GET' });
     } catch (error) {
         console.error('Fetch error:', error);
-        showAlert('Lỗi khi tải dữ liệu: ' + error.message, 'danger');
+        console.log('Attempted API base URLs:', API_BASE_URLS);
+        showAlert('Lỗi khi tải dữ liệu: Backend chưa sẵn sàng hoặc không phản hồi. Vui lòng thử lại sau.', 'danger');
         return [];
     }
 }
 
 async function createData(endpoint, data) {
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const result = await requestJson(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(data)
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
         showAlert('Thêm mới thành công!', 'success');
         return result;
     } catch (error) {
@@ -55,19 +70,10 @@ async function createData(endpoint, data) {
 
 async function updateData(endpoint, id, data) {
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}/${id}`, {
+        const result = await requestJson(`${endpoint}/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(data)
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
         showAlert('Cập nhật thành công!', 'success');
         return result;
     } catch (error) {
@@ -79,17 +85,7 @@ async function updateData(endpoint, id, data) {
 
 async function deleteData(endpoint, id) {
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        await requestJson(`${endpoint}/${id}`, { method: 'DELETE' });
         showAlert('Xóa thành công!', 'success');
         return true;
     } catch (error) {
@@ -102,6 +98,25 @@ async function deleteData(endpoint, id) {
 // ============================================
 // UI HELPER FUNCTIONS
 // ============================================
+
+async function checkBackendStatus() {
+    try {
+        const response = await fetch('http://127.0.0.1:3000/rooms', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-store'
+        });
+
+        if (response.ok) {
+            console.log('Backend reachable');
+            return true;
+        }
+    } catch (error) {
+        console.error('Backend check failed:', error);
+    }
+
+    return false;
+}
 
 function loadSection(sectionId) {
     // Hide all sections
@@ -197,9 +212,9 @@ async function loadRooms() {
                 <i class="fas fa-door-open"></i> Phòng ${room.roomNumber}
             </div>
             <div class="card-body-custom">
-                <p><strong>Loại:</strong> ${room.roomType || 'N/A'}</p>
+                <p><strong>Loại:</strong> ${formatRoomType(room.roomType)}</p>
                 <p><strong>Tầng:</strong> ${room.floor || 'N/A'}</p>
-                <p><strong>Giá:</strong> $${room.price || 0}</p>
+                <p><strong>Giá:</strong> $${formatCurrency(room.pricePerNight ?? room.price)}</p>
                 <p><strong>Trạng thái:</strong> 
                     <span class="badge badge-status ${getStatusClass(room.status)}">
                         ${getStatusText(room.status)}
@@ -276,6 +291,7 @@ function showAddRoomForm() {
             roomNumber: document.getElementById('roomNumber').value,
             roomType: document.getElementById('roomType').value,
             floor: parseInt(document.getElementById('floor').value),
+            pricePerNight: parseFloat(document.getElementById('price').value),
             price: parseFloat(document.getElementById('price').value),
             status: document.getElementById('status').value,
             description: document.getElementById('description').value
@@ -293,6 +309,16 @@ function showAddRoomForm() {
 function showEditRoomForm(id) {
     // Implementation similar to add form
     showAlert('Tính năng sửa đang được phát triển', 'warning');
+}
+
+function formatRoomType(type) {
+    switch(type) {
+        case 'single': return 'Single';
+        case 'double': return 'Double';
+        case 'suite': return 'Suite';
+        case 'deluxe': return 'Deluxe';
+        default: return type || 'N/A';
+    }
 }
 
 function getStatusClass(status) {
@@ -335,8 +361,8 @@ async function loadCustomers() {
                 <p><strong>Email:</strong> ${customer.email || 'N/A'}</p>
                 <p><strong>Điện thoại:</strong> ${customer.phone || 'N/A'}</p>
                 <p><strong>Địa chỉ:</strong> ${customer.address || 'N/A'}</p>
-                <p><strong>Quốc gia:</strong> ${customer.country || 'N/A'}</p>
-                <p><strong>ID Passport:</strong> ${customer.idPassport || 'N/A'}</p>
+                <p><strong>Quốc gia:</strong> ${customer.nationality || customer.country || 'N/A'}</p>
+                <p><strong>ID Card:</strong> ${customer.idCard || customer.idPassport || 'N/A'}</p>
             </div>
             <div class="card-footer-custom">
                 <button class="btn btn-sm btn-edit" onclick="showEditCustomerForm(${customer.id})">
@@ -381,11 +407,11 @@ function showAddCustomerForm() {
             </div>
             <div class="form-group">
                 <label class="form-label">Quốc Gia</label>
-                <input type="text" class="form-control" id="country">
+                <input type="text" class="form-control" id="nationality">
             </div>
             <div class="form-group">
-                <label class="form-label">ID Passport</label>
-                <input type="text" class="form-control" id="idPassport">
+                <label class="form-label">ID Card</label>
+                <input type="text" class="form-control" id="idCard">
             </div>
             <button type="submit" class="btn btn-primary w-100">Thêm Khách Hàng</button>
         </form>
@@ -398,8 +424,8 @@ function showAddCustomerForm() {
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
             address: document.getElementById('address').value,
-            country: document.getElementById('country').value,
-            idPassport: document.getElementById('idPassport').value
+            nationality: document.getElementById('nationality').value,
+            idCard: document.getElementById('idCard').value
         };
         
         if (await createData('/customers', data)) {
@@ -434,13 +460,13 @@ async function loadBookings() {
                 <i class="fas fa-calendar-check"></i> Đặt Phòng #${booking.id}
             </div>
             <div class="card-body-custom">
-                <p><strong>Khách Hàng:</strong> ${booking.customerId || 'N/A'}</p>
-                <p><strong>Phòng:</strong> ${booking.roomId || 'N/A'}</p>
-                <p><strong>Ngày Nhận:</strong> ${formatDate(booking.checkInDate)}</p>
-                <p><strong>Ngày Trả:</strong> ${formatDate(booking.checkOutDate)}</p>
+                <p><strong>Khách Hàng:</strong> ${booking.customer?.fullName || booking.customerId || 'N/A'}</p>
+                <p><strong>Phòng:</strong> ${booking.room?.roomNumber || booking.roomId || 'N/A'}</p>
+                <p><strong>Ngày Nhận:</strong> ${formatDate(booking.checkIn || booking.checkInDate)}</p>
+                <p><strong>Ngày Trả:</strong> ${formatDate(booking.checkOut || booking.checkOutDate)}</p>
                 <p><strong>Số Đêm:</strong> ${booking.numberOfNights || 'N/A'}</p>
-                <p><strong>Tổng Tiền:</strong> $${booking.totalPrice || 0}</p>
-                <p><strong>Ghi Chú:</strong> ${booking.notes || 'N/A'}</p>
+                <p><strong>Tổng Tiền:</strong> $${formatCurrency(booking.totalPrice)}</p>
+                <p><strong>Ghi Chú:</strong> ${booking.note || booking.notes || 'N/A'}</p>
             </div>
             <div class="card-footer-custom">
                 <button class="btn btn-sm btn-view" onclick="viewBooking(${booking.id})">
@@ -504,10 +530,13 @@ function showAddBookingForm() {
         const data = {
             customerId: parseInt(document.getElementById('customerId').value),
             roomId: parseInt(document.getElementById('roomId').value),
+            checkIn: document.getElementById('checkInDate').value,
+            checkOut: document.getElementById('checkOutDate').value,
             checkInDate: document.getElementById('checkInDate').value,
             checkOutDate: document.getElementById('checkOutDate').value,
             numberOfNights: numberOfNights,
             totalPrice: parseFloat(document.getElementById('totalPrice').value),
+            note: document.getElementById('notes').value,
             notes: document.getElementById('notes').value
         };
         
@@ -544,8 +573,8 @@ async function loadServices() {
             </div>
             <div class="card-body-custom">
                 <p><strong>Mô Tả:</strong> ${service.description || 'N/A'}</p>
-                <p><strong>Giá:</strong> $${service.price || 0}</p>
-                <p><strong>Trạng Thái:</strong> ${service.status || 'N/A'}</p>
+                <p><strong>Giá:</strong> $${formatCurrency(service.price)}</p>
+                <p><strong>Trạng Thái:</strong> ${service.isActive ? 'Hoạt động' : 'Không hoạt động'}</p>
             </div>
             <div class="card-footer-custom">
                 <button class="btn btn-sm btn-edit" onclick="showEditServiceForm(${service.id})">
@@ -574,7 +603,7 @@ function showAddServiceForm() {
         <form id="serviceForm">
             <div class="form-group">
                 <label class="form-label">Tên Dịch Vụ</label>
-                <input type="text" class="form-control" id="serviceName" required>
+                <input type="text" class="form-control" id="name" required>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
@@ -586,9 +615,9 @@ function showAddServiceForm() {
             </div>
             <div class="form-group">
                 <label class="form-label">Trạng Thái</label>
-                <select class="form-select" id="status" required>
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Không hoạt động</option>
+                <select class="form-select" id="isActive" required>
+                    <option value="true">Hoạt động</option>
+                    <option value="false">Không hoạt động</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary w-100">Thêm Dịch Vụ</button>
@@ -598,10 +627,10 @@ function showAddServiceForm() {
     document.getElementById('serviceForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = {
-            serviceName: document.getElementById('serviceName').value,
+            name: document.getElementById('name').value,
             description: document.getElementById('description').value,
             price: parseFloat(document.getElementById('price').value),
-            status: document.getElementById('status').value
+            isActive: document.getElementById('isActive').value === 'true'
         };
         
         if (await createData('/services', data)) {
@@ -640,7 +669,7 @@ async function loadStaff() {
                 <p><strong>Email:</strong> ${member.email || 'N/A'}</p>
                 <p><strong>Điện Thoại:</strong> ${member.phone || 'N/A'}</p>
                 <p><strong>Ngày Vào Làm:</strong> ${formatDate(member.hireDate)}</p>
-                <p><strong>Lương:</strong> $${member.salary || 0}</p>
+                <p><strong>Lương:</strong> $${formatCurrency(member.salary)}</p>
             </div>
             <div class="card-footer-custom">
                 <button class="btn btn-sm btn-edit" onclick="showEditStaffForm(${member.id})">
@@ -698,7 +727,7 @@ function showAddStaffForm() {
     document.getElementById('staffForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = {
-            name: document.getElementById('name').value,
+            fullName: document.getElementById('name').value,
             position: document.getElementById('position').value,
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
@@ -802,11 +831,20 @@ function formatDate(dateString) {
     });
 }
 
+function formatCurrency(value) {
+    const number = Number(value ?? 0);
+    return isNaN(number) ? 0 : number.toLocaleString('vi-VN');
+}
+
 // ============================================
 // INITIALIZATION
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Load dashboard on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    const backendReady = await checkBackendStatus();
+    if (!backendReady) {
+        showAlert('Không thể kết nối tới backend trên cổng 3000. Hãy chạy npm start trước khi mở trang.', 'danger');
+    }
+
     loadDashboard();
 });

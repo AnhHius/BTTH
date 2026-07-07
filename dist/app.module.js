@@ -10,6 +10,7 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const room_module_1 = require("./modules/room/room.module");
+const cookie_controller_1 = require("./cookie/cookie.controller");
 const customer_module_1 = require("./modules/customer/customer.module");
 const booking_module_1 = require("./modules/booking/booking.module");
 const staff_module_1 = require("./modules/staff/staff.module");
@@ -23,11 +24,11 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'mysql',
-                host: 'localhost',
-                port: 3306,
-                username: 'root',
-                password: '', // Codespaces thường không có password
-                database: 'quan_ly_khach_san',
+                host: process.env.DB_HOST ?? '127.0.0.1',
+                port: Number(process.env.DB_PORT) || 3306,
+                username: process.env.DB_USER ?? 'root',
+                password: process.env.DB_PASSWORD ?? 'root',
+                database: process.env.DB_NAME ?? 'quan_ly_khach_san',
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
                 synchronize: false,
                 charset: 'utf8mb4',
@@ -39,6 +40,7 @@ exports.AppModule = AppModule = __decorate([
             service_module_1.ServiceModule,
             invoice_module_1.InvoiceModule,
         ],
+        controllers: [cookie_controller_1.CookieController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
