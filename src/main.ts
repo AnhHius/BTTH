@@ -5,7 +5,7 @@ import session from 'express-session';
 import * as express from 'express';
 import * as path from 'path';
 
-async function bootstrap() {
+/*async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
@@ -35,3 +35,6 @@ async function bootstrap() {
   await app.listen(3000);
 }
 bootstrap();
+*/
+
+//sau nhớ đăng xuất git
