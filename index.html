@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Khách Sạn</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header id="header" class="header-section">
+        <div class="container-fluid">
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <div class="container-lg">
+                    <a class="navbar-brand" href="#">
+                        <i class="fas fa-hotel"></i> LUXE HOTEL MANAGEMENT
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="loadSection('rooms')">Phòng</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="loadSection('customers')">Khách Hàng</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="loadSection('bookings')">Đặt Phòng</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="loadSection('services')">Dịch Vụ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="loadSection('staff')">Nhân Viên</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="loadSection('invoices')">Hóa Đơn</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- BANNER -->
+    <section id="banner" class="banner-section">
+        <div class="banner-overlay"></div>
+        <div class="container">
+            <div class="banner-content">
+                <h1>Chào Mừng Đến Hệ Thống Quản Lý Khách Sạn</h1>
+                <p>Quản lý hiệu quả, phục vụ khách tốt hơn</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTENT -->
+    <main id="content" class="content-section">
+        <div class="container-lg">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section-content">
+                <h2>Bảng Điều Khiển</h2>
+                <div class="row mt-4" id="dashboardStats">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon rooms-icon">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h5>Phòng</h5>
+                                <p id="roomCount" class="stat-number">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon customers-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h5>Khách Hàng</h5>
+                                <p id="customerCount" class="stat-number">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon bookings-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h5>Đặt Phòng</h5>
+                                <p id="bookingCount" class="stat-number">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-icon services-icon">
+                                <i class="fas fa-concierge-bell"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h5>Dịch Vụ</h5>
+                                <p id="serviceCount" class="stat-number">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rooms Section -->
+            <div id="rooms" class="section-content d-none">
+                <div class="section-header">
+                    <h2>Danh Sách Phòng</h2>
+                    <button class="btn btn-primary" onclick="showAddRoomForm()">
+                        <i class="fas fa-plus"></i> Thêm Phòng
+                    </button>
+                </div>
+                <div id="roomsList" class="data-grid mt-4">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customers Section -->
+            <div id="customers" class="section-content d-none">
+                <div class="section-header">
+                    <h2>Danh Sách Khách Hàng</h2>
+                    <button class="btn btn-primary" onclick="showAddCustomerForm()">
+                        <i class="fas fa-plus"></i> Thêm Khách Hàng
+                    </button>
+                </div>
+                <div id="customersList" class="data-grid mt-4">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bookings Section -->
+            <div id="bookings" class="section-content d-none">
+                <div class="section-header">
+                    <h2>Danh Sách Đặt Phòng</h2>
+                    <button class="btn btn-primary" onclick="showAddBookingForm()">
+                        <i class="fas fa-plus"></i> Thêm Đặt Phòng
+                    </button>
+                </div>
+                <div id="bookingsList" class="data-grid mt-4">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Section -->
+            <div id="services" class="section-content d-none">
+                <div class="section-header">
+                    <h2>Danh Sách Dịch Vụ</h2>
+                    <button class="btn btn-primary" onclick="showAddServiceForm()">
+                        <i class="fas fa-plus"></i> Thêm Dịch Vụ
+                    </button>
+                </div>
+                <div id="servicesList" class="data-grid mt-4">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Section -->
+            <div id="staff" class="section-content d-none">
+                <div class="section-header">
+                    <h2>Danh Sách Nhân Viên</h2>
+                    <button class="btn btn-primary" onclick="showAddStaffForm()">
+                        <i class="fas fa-plus"></i> Thêm Nhân Viên
+                    </button>
+                </div>
+                <div id="staffList" class="data-grid mt-4">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoices Section -->
+            <div id="invoices" class="section-content d-none">
+                <div class="section-header">
+                    <h2>Danh Sách Hóa Đơn</h2>
+                </div>
+                <div id="invoicesList" class="data-grid mt-4">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="footer" class="footer-section">
+        <div class="container-lg">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5>Về Chúng Tôi</h5>
+                    <p>Hệ thống quản lý khách sạn hiện đại, cung cấp giải pháp toàn diện cho quản lý hoạt động khách sạn.</p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Liên Kết Nhanh</h5>
+                    <ul class="footer-links">
+                        <li><a href="#" onclick="loadSection('rooms')">Quản Lý Phòng</a></li>
+                        <li><a href="#" onclick="loadSection('customers')">Quản Lý Khách Hàng</a></li>
+                        <li><a href="#" onclick="loadSection('bookings')">Quản Lý Đặt Phòng</a></li>
+                        <li><a href="#" onclick="loadSection('services')">Quản Lý Dịch Vụ</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Liên Hệ</h5>
+                    <p>
+                        <i class="fas fa-phone"></i> (84) 123 456 789<br>
+                        <i class="fas fa-envelope"></i> info@luxehotel.vn<br>
+                        <i class="fas fa-map-marker-alt"></i> 123 Đường ABC, TP. Hồ Chí Minh
+                    </p>
+                </div>
+            </div>
+            <hr>
+            <div class="footer-bottom">
+                <p>&copy; 2024 LUXE HOTEL MANAGEMENT. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal for Forms -->
+    <div class="modal fade" id="formModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="formTitle">Form</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="formBody">
+                    <!-- Form content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
